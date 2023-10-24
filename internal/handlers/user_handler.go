@@ -19,6 +19,7 @@ func RegisterUserHandler(s *server.Server) {
 	}
 
 	s.Router.Get("/users", handler.getUserHandler)
+	s.Router.Post("/users", handler.addUserHandler)
 }
 
 func (h *userHandler) getUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -48,5 +49,27 @@ func (h *userHandler) getUserHandler(w http.ResponseWriter, r *http.Request) {
 		h.Server.DB.Find(&users)
 	}
 
-	serializer.SendResponseData(w, users)
+	serializer.SendResponseData(w, 400, users)
+}
+
+type AddUserRequest struct {
+	Name string `json:"name" validate:"required"`
+	Age  int    `json:"age" validate:"required"`
+}
+
+func (h *userHandler) addUserHandler(w http.ResponseWriter, r *http.Request) {
+	var req AddUserRequest
+
+	if err := serializer.ValidateRequestJson(w, r, h.Server.Validator, &req); err != nil {
+		return
+	}
+
+	user := models.User{
+		Name: req.Name,
+		Age:  req.Age,
+	}
+
+	h.Server.DB.Create(&user)
+
+	serializer.SendResponseData(w, 400, user)
 }

@@ -5,7 +5,10 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
+	"github.com/mimamch/go-crud/internal/middlewares"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -19,8 +22,9 @@ type Config struct {
 }
 
 type Server struct {
-	DB     *gorm.DB
-	Router *chi.Mux
+	DB        *gorm.DB
+	Router    *chi.Mux
+	Validator *validator.Validate
 }
 
 func (s *Server) Run(p string) error {
@@ -35,10 +39,13 @@ func NewServer(cfg Config) (*Server, error) {
 	}
 
 	router := chi.NewRouter()
+	router.Use(middleware.Logger)
+	router.Use(middlewares.RecoverMiddleware)
 
 	s := &Server{
-		DB:     conn,
-		Router: router,
+		DB:        conn,
+		Router:    router,
+		Validator: validator.New(),
 	}
 
 	return s, nil
